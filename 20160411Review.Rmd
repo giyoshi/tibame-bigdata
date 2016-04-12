@@ -1,0 +1,297 @@
+---
+title: "20160409Demo"
+author: "Wesley"
+date: "2016年4月9日"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##GET appledaily
+```{r}
+library(httr)
+res <- GET('http://www.appledaily.com.tw/realtimenews/section/new/')
+res
+```
+
+##POST THSRC
+```{r}
+library(httr)
+url <- "https://www.thsrc.com.tw/tw/TimeTable/SearchResult"
+payload <- list(
+  StartStation= "977abb69-413a-4ccf-a109-0272c24fd490",
+  EndStation= '9c5ac6ca-ec89-48f8-aab0-41b738cb1814',
+  SearchDate= '2016/04/12',
+  SearchTime= '21:00',
+  SearchWay= 'DepartureInMandarin'
+)
+
+res<-POST(url, body=payload, encode = "form")
+res
+```
+
+##Markdown Sample
+
+#Heading 1
+
+##Heading 2
+
+###Heading 3
+
+<ol>list item
+  <li>item1</li>
+  <li>item2</li>
+  <li>item3</li>
+list item2</ol>
+
+##To understand Markdown
+http://markdown.tw
+
+##List Operation
+```{r}
+p1 <- list(height=175, weight=71, name="Wesley")
+p1
+p1$height
+```
+
+##magrittr
+
+data(iris)
+?iris
+View(iris)
+a<-head(iris)
+b<-a[3,]
+c<-b['Sepal.Length']
+tail(c,1)
+tail(head(iris)[3,]['Sepal.Length'],1)
+
+```{r}
+#install.packages("magrittr")
+library(magrittr)
+iris %>% head() %>% .[3,] %>% .['Sepal.Length'] %>% tail(1)
+```
+
+##rvest
+```{r}
+library(httr)
+library(rvest)
+res <- GET('http://www.appledaily.com.tw/realtimenews/section/new/')
+
+#harvest by tag name : time Looking at 2016/04/11
+content(res) %>% html_nodes('time') %>% .[1] %>% html_text()
+content(res) %>% html_nodes('h1.dddd time') %>% html_text()
+content(res) %>% html_nodes('#maincontent.vertebrae > div.thoracis > div.abdominis.rlby.clearmen > h1.dddd > time') %>% html_text()
+
+#harvest by CSS ID: maincontent
+content(res) %>% html_nodes('#maincontent')
+
+
+#harvest by css class: rtddt
+content(res) %>% html_nodes('.rtddt')
+
+#harvest by list li with css class: rtddt
+content(res) %>% html_nodes('li.rtddt')
+```
+
+##Comparing httr GET and rvest read_html
+```{r}
+library(httr)
+library(rvest)
+res <- GET('http://www.appledaily.com.tw/realtimenews/section/new/')
+
+#using httr GET
+content(res) %>% html_nodes('#maincontent > div.thoracis > div.abdominis.rlby.clearmen >h1 > time') %>% html_text()
+
+#using rvest read_html
+read_html('http://www.appledaily.com.tw/realtimenews/section/new/') %>% html_nodes('#maincontent > div.thoracis > div.abdominis.rlby.clearmen >h1 > time') %>% html_text()
+```
+
+##Get appledaily list
+```{r}
+url <- 'http://www.appledaily.com.tw/realtimenews/section/new/'
+Sys.getlocale()
+li <- read_html(url, encoding = 'UTF-8') %>% html_nodes('li.rtddt')
+
+datetime <- li %>% html_nodes('time') %>% html_text() %>%iconv(from='UTF-8', to='UTF-8')
+h1 <- li %>% html_nodes('h1') %>% html_text() %>%iconv(from='UTF-8', to='UTF-8')
+h2 <- li %>% html_nodes('h2') %>% html_text() %>%iconv(from='UTF-8', to='UTF-8')
+
+li %>% html_nodes('a') %>% html_attr('href')
+
+appledf <- data.frame(datetime= datetime, title=h1, category=h2)
+appledf[ appledf$category =='娛樂', ]
+```
+
+##Data Frame Demo
+
+name <- 'Mike'
+name
+
+name <- c('mike', 'alice', 'john')
+height <- c(175, 165, 160)
+weight <- c(65, 55, 57)
+
+df <- data.frame(namec = name, heightc = height, weightc = weight)
+
+df[1,]
+df[1, 'heightc']
+df[df$weightc >= 60, ]
+df
+View(df)
+
+# get second row
+df[2,]
+
+#get column named heightc
+df[,2]
+df$heightc
+
+#get alice's height
+df[2,2]
+df[2,'heightc']
+
+#get height over 170
+df[df$heightc>170,c('namec','heightc')]
+
+#get bmi of these three  bmi=weight/(height^2)
+df$bmi = df$weightc/((df$heightc)^2)
+df
+max(df$bmi)
+summary(df$bmi)
+
+
+##Paste demo
+```{r}
+a <- 'hello'
+b <- 'world'
+
+#paste with space
+paste(a,b)
+
+#paste without space
+paste0(a,b)
+
+#using magrittr
+a %>% paste(b)
+
+#using magrittr
+a %>% paste(b, .)
+```
+
+##Get appledaily list 2
+```{r}
+url <- 'http://www.appledaily.com.tw/realtimenews/section/new/'
+li <- read_html(url, encoding = 'UTF-8') %>% html_nodes('li.rtddt')
+
+datetime <- li %>% html_nodes('time') %>% html_text() %>%iconv(from='UTF-8', to='UTF-8')
+h1 <- li %>% html_nodes('h1') %>% html_text() %>%iconv(from='UTF-8', to='UTF-8')
+h2 <- li %>% html_nodes('h2') %>% html_text() %>%iconv(from='UTF-8', to='UTF-8')
+url <- li %>% html_nodes('a') %>% html_attr('href')
+
+url <- paste0('http://www.appledaily.com.tw', url)
+url
+
+appledf <- data.frame(datetime= datetime, title=h1, category=h2, url=url)
+appledf
+
+url <- 'http://www.appledaily.com.tw/realtimenews/article/3c/20160412/836558/VR直播靠這顆　還有4K畫質'
+
+read_html(url) %>% html_nodes('.trans') %>% html_text() %>%iconv(from='UTF-8', to='UTF-8')
+```
+
+##function demo
+```{r}
+f <- function(e, a=5){
+  e+a
+}
+
+f(3)
+f(3,2)
+
+f<-function(e, a=5, b=2){
+  e+a*b
+}
+
+f(3,2,2)
+f(a=3, b=2, e=2)
+```
+
+##get article function
+```{r}
+getArticle <- function(url){
+  read_html(url) %>%
+    html_nodes(' .articulum.trans') %>%
+    html_text() %>%
+    iconv(from='UTF-8', to='UTF-8')
+}
+
+a <- getArticle('http://www.appledaily.com.tw/realtimenews/article/3c/20160412/836558/VR直播靠這顆　還有4K畫質')
+a
+```
+
+##for looping
+```{r}
+
+1:30
+1:100
+
+for (i in 1:100) {
+  print(i)
+}
+
+for (i in 1:nrow(appledf)) {
+  print(appledf[i,]$title)
+}
+
+appledf$content = NA
+for (i in 1:nrow(appledf)) {
+  appledf[1,]$content <- getArticle(as.character(appledf[i,]$url))
+}
+```
+
+##vectorizing programming
+```{r}
+a <- c(1,2,3,4,5)
+a > 3
+a[a>3]
+
+a <- list(a = c(1,2,3,4,5), b = 1:100, c = c(1,2))
+lapply(a,sum)
+sapply(a,sum)
+
+x = list(c(1,2,3,4), c(5,6,7,8))
+lapply(x, sum)
+sapply(x, sum)
+```
+
+##sapply get article detail
+```{r}
+appledf$content <- NULL
+appledf$url <- as.character(appledf$url)
+
+appledf$content <- sapply(appledf$url, getArticle)
+appledf$content
+```
+
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
